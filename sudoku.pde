@@ -55,16 +55,19 @@ void keyPressed() {
 	}
 
 	if (key == 'g') {
-		int[][] b = new int[9][9];
-		boolean fillSuccessful = Solver.fillBoard(b, 0);
-		if (fillSuccessful) {
-			String str = "";
-			for (int r = 0; r < 9; ++r) {
-				for (int c = 0; c < 9; ++c) {
-					str += b[r][c];
-				}
+		// String strBoard = "295743861431865900876192543387459216612387495549216738763534189928671354154938600";
+		String strBoard = Solver.gridToString(board.getArrayGrid());
+
+
+		int[][] b = Solver.stringToGrid(strBoard);
+		List<String> solutions = new ArrayList<String>();
+		Solver.solve(b, 0, solutions, 1000);
+		if (solutions.size() > 0) {
+			println(solutions.size());
+			for (int i = 0; i < solutions.size(); ++i) {
+				println(solutions.get(i));
 			}
-			board.setFromString(str);
+			board.setFromString(solutions.get(0));
 		}
 		else {
 			println("Generation unsuccessful :(");

@@ -2,23 +2,39 @@ static class Solver {
 
 	//Contains all of the functions related to solving a board
 	//functions are designed to take a double int array as input
+	//designed for standard 9x9 sudoku grids only
 
-	//backtracking algorithm to complete fill a given board
-	//(solution will not necessarily be unique)
-	//assumes cells only have values 0-9
-	public static boolean fillBoard(int[][] b, int pos) {
+	//backtracking algorithm to solutions to a given board
+	//if board contains a number that is not 0-9, will return 0
+	//randomizes order in which values are tried to obtain varied solutions
+
+	//g = grid
+	//pos = position at which to start search
+	//solutions = list of found solutions
+	//count = 
+	//max = max # of solutions to find
+	public static void solve(int[][] g, int pos, List<String> solutions, int max) {
 		//b will never be copied
 		//we'll just undo any bad moves we make
 
 		//take care of terminal case first
-		if (pos >= 81) return true;
+		//we're only filling valid values, so if grid is full, we have a solution
+		if (gridFull(g)) {
+			solutions.add(gridToString(g));
+			return;
+		}
 
+		pos %= 81;
 		int c = pos % 9;
 		int r = pos / 9;
-
-		//if this cell is already full, just call recursively again with pos incremented
-		if (b[r][c] != 0) {
-			return fillBoard(b, pos + 1);
+		
+		if (g[r][c] < 0 || g[r][c] > 9) {
+			//cell has an invalid number in it (not 0-9)
+			return;
+		}
+		if (g[r][c] != 0) {
+			//cell is already valid. Just call recursively again with pos incremented
+			solve(g, pos + 1, solutions, max);
 		}
 
 		//randomize which moves we try first so that we get new boards each time
@@ -27,23 +43,19 @@ static class Solver {
 
 		for(int i = 0; i < 9; ++i) {
 			//if the next valud is legal to play, play it
-			if(checkValid(b, valueList[i], r, c)) {
-				b[r][c] = valueList[i];
+			if(checkValid(g, valueList[i], r, c)) {
+				g[r][c] = valueList[i];
 				//recursively call this function with the updated board, and increment pos
-				if (fillBoard(b, pos + 1)) {
-					//if the recursive call returned true, that means we got all the way to the final position and successfully placed a piece
-					return true;
-				}
-				else {
-					//if the call returned false, that means this last piece we played led to a board with no solution
-					//un-play that move, then try the next value in this same square
-					b[r][c] = 0;
-				}
+				solve(g, pos + 1, solutions, max);
+				g[r][c] = 0;
+
+				if (solutions.size() >= max) return;
 			}
 		}
-		//if we get here, then none of the possible values for this cell led to a solution, meaning this board has no solutions
-		return false;
+
+		return;
 	}
+
 
 	public static boolean checkValid(Cell[][] b, int v, int r, int c) {
 		//if cell is populated, automatically not valid
@@ -165,5 +177,56 @@ static class Solver {
 		}
 		
 		return members;
+	}
+
+	public static String gridToString(int[][] g) {
+		String str = "";
+		for (int r = 0; r < 9; ++r) {
+			for (int c = 0; c < 9; ++c) {
+				str += g[r][c];
+			}
+		}
+		return str;
+	}
+
+	public static int[][] stringToGrid(String str) {
+		String trimmed = "";
+		int[][] grid = new int[9][9];
+
+		int count = 0;
+		for (int i = 0; i < str.length(); i++){
+			char c = str.charAt(i);
+			if (c >= '0' && c <= '9') {
+				trimmed += c;
+				count += 1;
+				if (count >= 81) break;
+			}
+		}
+
+		if (trimmed.length() < 81) {
+			int l = trimmed.length();
+			for (int i = 0; i < (81 - l); ++i) {
+				trimmed += '0';
+			}
+		}
+
+		for (int r = 0; r < 9; ++r) {
+			for (int c = 0; c < 9; ++c) {
+				grid[r][c] = int(trimmed.charAt((r * 9) + c)) - 48;
+			}
+		}
+
+		return grid;
+	}
+
+	//tells whether a grid is full of numbers 1-9 or not
+	//will return false if any cell has non 1-9 in it
+	private static boolean gridFull(int[][] g) {
+		for (int r = 0; r < 9; ++r) {
+			for (int c = 0; c < 9; ++c) {
+				if (g[r][c] < 1 || g[r][c] > 9) return false;
+			}
+		}
+		return true;
 	}
 };

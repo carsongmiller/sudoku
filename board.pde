@@ -367,27 +367,10 @@ class Board {
 	//if string doesn't contain 81x 0-9 char's, we fill the rest with 0's
 	//If there are too many char's, we truncate
 	public void setFromString(String str) {
-		String trimmed = "";
-		int count = 0;
-		for (int i = 0; i < str.length(); i++){
-			char c = str.charAt(i);
-			if (c >= '0' && c <= '9') {
-				trimmed += c;
-				count += 1;
-				if (count >= 81) break;
-			}
-		}
-
-		if (trimmed.length() < 81) {
-			int l = trimmed.length();
-			for (int i = 0; i < (81 - l); ++i) {
-				trimmed += '0';
-			}
-		}
-
+		int array[][] = Solver.stringToGrid(str);
 		for (int r = 0; r < 9; ++r) {
 			for (int c = 0; c < 9; ++c) {
-				grid[r][c].setValue(int(trimmed.charAt((r * 9) + c)) - 48);
+				grid[r][c].setValue(array[r][c]);
 			}
 		}
 	}
