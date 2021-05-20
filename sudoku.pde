@@ -1,3 +1,10 @@
+import javax.swing.*;
+import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Dimension;
+
+
 Board board;
 int windowMargin = 50;
 int cellSize = 100;
@@ -8,22 +15,63 @@ boolean ctrlPressed = false;
 boolean shiftPressed = false;
 boolean altPressed = false;
 
+
+JFrame f = new JFrame("Button Example");  
+JButton b = new JButton("Click Here");
+
+
+
+//=========================
+//Controls
+//=========================
+
+//Buttons
+List<Button> btnList = new ArrayList<Button>();
+Button btn1 = new Button("test", 1100, 100, 100, 50);
+
+//Text Boxes
+TextBox tb, tb2;
+
+//Text Boxes
+
 void setup() {
-	size(1000, 1000);
+	size(1500, 1000);
 	background(128);
 	board = new Board(windowMargin, windowMargin, cellSize);
 	frameRate(120);
+	
+	tb = new TextBox(1100, 100, 200, 100);
+	tb2 = new TextBox(1100, 225, 200, 100);
 }
 
+
 void draw() {
+	//Draw the board
 	board.draw(mouseX, mouseY);
+
+	tb.display();
+	tb2.display();
+
+	//Draw all the controls
+	for (Button b : btnList) {
+		b.draw();
+	}
 }
 
 void mouseClicked() {
 	board.mouseClicked(mouseX, mouseY);
+
+	if (tb.checkFocus()) tb.focused = true;
+	else tb.focused = false;
+
+	if (tb2.checkFocus()) tb2.focused = true;
+	else tb2.focused = false;
 }
 
 void keyPressed() {
+	tb.tKeyTyped();
+	tb2.tKeyTyped();
+
 	if (key == CODED) {
 		if (keyCode == CONTROL) {
 			ctrlPressed = true;
@@ -61,7 +109,7 @@ void keyPressed() {
 
 		int[][] b = Solver.stringToGrid(strBoard);
 		List<String> solutions = new ArrayList<String>();
-		Solver.solve(b, 0, solutions, 1000);
+		Solver.solve(b, 0, solutions, 1);
 		if (solutions.size() > 0) {
 			println(solutions.size());
 			for (int i = 0; i < solutions.size(); ++i) {
