@@ -1,8 +1,4 @@
-import javax.swing.*;
-import java.awt.event.*;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Dimension;
+import controlP5.*;
 
 
 Board board;
@@ -16,18 +12,15 @@ boolean shiftPressed = false;
 boolean altPressed = false;
 
 
-JFrame f = new JFrame("Button Example");  
-JButton b = new JButton("Click Here");
-
-
+ControlP5 cp5;
+Textarea myTextarea;
 
 //=========================
 //Controls
 //=========================
 
 //Buttons
-List<Button> btnList = new ArrayList<Button>();
-Button btn1 = new Button("test", 1100, 100, 100, 50);
+Button btn1;
 
 //Text Boxes
 TextBox tb, tb2;
@@ -36,41 +29,115 @@ TextBox tb, tb2;
 
 void setup() {
 	size(1500, 1000);
-	background(128);
+	
 	board = new Board(windowMargin, windowMargin, cellSize);
 	frameRate(120);
 	
 	tb = new TextBox(1100, 100, 200, 100);
 	tb2 = new TextBox(1100, 225, 200, 100);
+	btn1 = new Button("test", 1100, 400, 100, 50);
+
+	cp5 = new ControlP5(this);
+
+	myTextarea = cp5.addTextarea("txt")
+					.setPosition(100,100)
+					.setSize(200,200)
+					.setFont(createFont("arial",20))
+					.setLineHeight(14)
+					.setColor(color(128))
+					.setColorBackground(color(255))
+					.setColorForeground(color(255,100));
+					;
+	myTextarea.setText("Lorem Ipsum is simply dummy text of the printing and typesetting"
+					+" industry. Lorem Ipsum has been the industry's standard dummy text"
+					+" ever since the 1500s, when an unknown printer took a galley of type"
+					+" and scrambled it to make a type specimen book. It has survived not"
+					+" only five centuries, but also the leap into electronic typesetting,"
+					+" remaining essentially unchanged. It was popularised in the 1960s"
+					+" with the release of Letraset sheets containing Lorem Ipsum passages,"
+					+" and more recently with desktop publishing software like Aldus"
+					+" PageMaker including versions of Lorem Ipsum."
+					);
+
+	cp5.addSlider("changeWidth")
+		.setRange(100,400)
+		.setValue(200)
+		.setPosition(100,20)
+		.setSize(100,19)
+		;
+	
+
+	cp5.addSlider("changeHeight")
+		.setRange(100,400)
+		.setValue(200)
+		.setPosition(100,40)
+		.setSize(100,90)
+		;
 }
 
 
 void draw() {
+	clear();
+	background(128);
 	//Draw the board
-	board.draw(mouseX, mouseY);
+	//board.draw(mouseX, mouseY);
 
 	tb.display();
 	tb2.display();
+	btn1.display();
 
-	//Draw all the controls
-	for (Button b : btnList) {
-		b.draw();
+	if(keyPressed && key==' ') {
+		myTextarea.scroll((float)mouseX/(float)width);
+	}
+	if(keyPressed && key=='l') {
+		myTextarea.setLineHeight(mouseY);
 	}
 }
 
-void mouseClicked() {
+void changeWidth(int theValue) {	
+	myTextarea.setWidth(theValue);
+}
+
+void changeHeight(int theValue) {
+	myTextarea.setHeight(theValue);
+}
+
+void mousePressed() {
+	tb.mousePressed();
+	tb2.mousePressed();
+	btn1.mousePressed();
+}
+
+void mouseReleased() {
 	board.mouseClicked(mouseX, mouseY);
 
-	if (tb.checkFocus()) tb.focused = true;
-	else tb.focused = false;
-
-	if (tb2.checkFocus()) tb2.focused = true;
-	else tb2.focused = false;
+	tb.mouseReleased();
+	tb2.mouseReleased();
+	btn1.mouseReleased();
 }
 
 void keyPressed() {
-	tb.tKeyTyped();
-	tb2.tKeyTyped();
+if(key=='r') {
+	myTextarea.setText("Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+						+" Quisque sed velit nec eros scelerisque adipiscing vitae eu sem."
+						+" Quisque malesuada interdum lectus. Pellentesque pellentesque molestie"
+						+" vestibulum. Maecenas ultricies, neque at porttitor lacinia, tellus enim"
+						+" suscipit tortor, ut dapibus orci lorem non ipsum. Mauris ut velit velit."
+						+" Fusce at purus in augue semper tincidunt imperdiet sit amet eros."
+						+" Vestibulum nunc diam, fringilla vitae tristique ut, viverra ut felis."
+						+" Proin aliquet turpis ornare leo aliquam dapibus. Integer dui nisi, condimentum"
+						+" ut sagittis non, fringilla vestibulum sapien. Sed ullamcorper libero et massa"
+						+" congue in facilisis mauris lobortis. Fusce cursus risus sit amet leo imperdiet"
+						+" lacinia faucibus turpis tempus. Pellentesque pellentesque augue sed purus varius"
+						+" sed volutpat dui rhoncus. Lorem ipsum dolor sit amet, consectetur adipiscing elit"
+						);
+						
+	} else if(key=='c') {
+		myTextarea.setColor(0xffffffff);
+	}
+
+	tb.keyPressed();
+	tb2.keyPressed();
 
 	if (key == CODED) {
 		if (keyCode == CONTROL) {
@@ -85,6 +152,10 @@ void keyPressed() {
 	}
 
 	board.keyPressed(keyCode, ctrlPressed);
+
+	//=========================
+	//Game Hotkeys
+	//=========================
 
 	if (key == 'h') {
 		board.printHouseSelected();
@@ -103,7 +174,6 @@ void keyPressed() {
 	}
 
 	if (key == 'g') {
-		// String strBoard = "295743861431865900876192543387459216612387495549216738763534189928671354154938600";
 		String strBoard = Solver.gridToString(board.getArrayGrid());
 
 

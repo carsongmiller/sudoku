@@ -18,14 +18,38 @@ public abstract class Control {
 	protected color c_textEnabled = color(0);
 	protected color c_textDisabled = color(0);
 	protected color c_borderUnfocused = color(0);
-	protected color c_borderFocused = color (255, 0, 0);
+	protected color c_borderFocused = color(0);
 
 	//Selection
 	boolean focused = false;
 	boolean enabled = true;
+
+	public void display() {
+		int borderWeight = focused ? 2 : 1;
+		stroke(focused ? c_borderFocused : c_borderUnfocused); //rectangle border
+		strokeWeight(borderWeight);
+ 		fill(enabled ? c_bgEnabled : c_bgDisabled); //rectangle color
+		rect(left, top, width, height);
+	}
+
+	public void mousePressed() {
+	}
+
+	public void mouseReleased() {
+		if (mouseIsOver()) focused = true;
+		else focused = false;
+	}
+	
+	public boolean mouseIsOver() {
+		if (mouseX > left && mouseX < (left + width) && mouseY > top && mouseY < (top + height)) {
+			return true;
+		}
+		return false;
+	}
 }
 
 class TextBox extends Control{
+	public boolean multiLine = false;
 	public int margin = 5;
 	public int limit = 1000;
 
@@ -35,61 +59,85 @@ class TextBox extends Control{
 	public String text = "";
 	public int textSize = 20;
 	public int justify = LEFT;
+	public int useHeight = height;
 
 	//blinking cursor
 	private Stopwatch blinkSW = new Stopwatch();
 	private boolean showCursor = false;
- 
+	final private char cursor = '|';
+
 	TextBox(int left, int top, int width, int height) {
 		super();
- 
+
 		this.left = left;
 		this.top = top;
 		this.width = width;
 		this.height = height;
 	}
- 
+
+	@Override
 	void display() {
+		int borderWeight = focused ? 2 : 1;
+		useHeight = multiLine ? height : textSize + (2 * margin) + (2 * borderWeight);
+
+		//draw rectangle
 		stroke(focused ? c_borderFocused : c_borderUnfocused); //rectangle border
-		strokeWeight(2);
+		strokeWeight(borderWeight);
  		fill(enabled ? c_bgEnabled : c_bgDisabled); //rectangle color
-		rect(left, top, width, height);
- 
+		rect(left, top, width, useHeight);
+
+		//draw text
 		fill(enabled ? c_textEnabled : c_textDisabled); //text color
 		textSize(textSize);
 		textAlign(justify);
 		updateCursor();
-		text(showCursor ? text + "_" : text, left + margin, top + margin, width - (margin * 2), height - (margin * 2));
+		text(showCursor ? text + cursor : text, left + margin, top + margin, width - (margin * 2), useHeight - (margin * 2) + 2);
 	}
- 
-	void tKeyTyped() {
-		if (key == CODED) {
-			if (keyCode == CONTROL) {
-				ctrlPressed = true;
-			}
-			if (keyCode == SHIFT) {
-				shiftPressed = true;
-			}
-			if (keyCode == ALT) {
-				altPressed = true;
-			}
+
+	void keyPressed() {
+		//update the modifier states even if we're not focused
+		if (keyCode == CONTROL) {
+			ctrlPressed = true;
+			return;
+		}
+		else if (keyCode == SHIFT) {
+			shiftPressed = true;
+			return;
+		}
+		else if (keyCode == ALT) {
+			altPressed = true;
 			return;
 		}
 
 		if (focused) {
-			//if we're focuses, we don't want anything else in the program to use these keystrokes
+			final int len = text.length();
+
+			//if we're focused, we don't want anything else in the program to use these keystrokes
 			char k = key;
 			int kc = keyCode;
 			key = 0;
 			keyCode = 0;
- 
+
 			if (k == ESC) {
 				focused = false;
-				k = 0;
 				return;
-			} 
-	
-			if (ctrlPressed && kc == 86) { //ctrl + v
+			}
+			if (k == BACKSPACE) {
+				text = text.substring(0, max(0, len-1));
+			}
+
+			else if (len >= limit) return;
+			//========================================================
+			//anything that may add length goes below here
+			//========================================================
+
+			else if (k == ENTER || k == RETURN) {
+				text += "\n";
+			}
+			else if (k == TAB) { //currently doesn't appear to do anything
+				text += "\t";
+			}
+			else if (ctrlPressed && kc == 86) { //ctrl + v
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 				//odd: the Object param of getContents is not currently used
 				Transferable contents = clipboard.getContents(null);
@@ -105,37 +153,10 @@ class TextBox extends Control{
 				catch (IOException ex){/*do nothing*/}
 				return;
 			}
-	
-			final int len = text.length();
-	
-			if (k == BACKSPACE) text = text.substring(0, max(0, len-1));
-			else if (len >= limit) return;
-			else if (k == ENTER || k == RETURN) text += "\n";
-			else if (k == TAB) text += "\t";
 			else if (k >= ' ') text += str(k);
 		}
 	}
- 
- 
-	void tKeyPressed() {
-		if (focused) {
-			if (key == ESC) {
-				println("esc 3");
-				//state=stateNormal;
-				//key=0;
-			}
-	
-			if (key != CODED)	return;
-	
-			final int k = keyCode;
-	
-			final int len = text.length();
-	
-			if (k == LEFT) text = text.substring(0, max(0, len-1));
-			else if (k == RIGHT & len < limit - 3) text += "  ";
-		}
-	}
- 
+
 	private void updateCursor() {
 		if (!focused) showCursor = false;
 		else {
@@ -145,41 +166,70 @@ class TextBox extends Control{
 			}
 		}
 	}
- 
-	boolean checkFocus() {
-		return focused = mouseX > left & mouseX < (left + width) & mouseY > top & mouseY < (top + height);
-	}
-}
 
-class Button {
-	String label;
-	float x; // top left corner x position
-	float y; // top left corner y position
-	float w; // width of button
-	float h; // height of button
-	
-	public Button(String labelB, float xpos, float ypos, float widthB, float heightB) {
-		label = labelB;
-		x = xpos;
-		y = ypos;
-		w = widthB;
-		h = heightB;
-	}
-	
-	public void draw() {
-		fill(218);
-		stroke(141);
-		rect(x, y, w, h, 10);
-		textAlign(CENTER, CENTER);
-		fill(0);
-		text(label, x + (w / 2), y + (h / 2));
-	}
-	
+	@Override
 	public boolean mouseIsOver() {
-		if (mouseX > x && mouseX < (x + w) && mouseY > y && mouseY < (y + h)) {
+		if (mouseX > left && mouseX < (left + width) && mouseY > top && mouseY < (top + useHeight)) {
 			return true;
 		}
 		return false;
+	}
+}
+
+class Button extends Control{
+	String text;
+	boolean pressed = false;
+	int textSize = 20;
+	color c_bgPressed = color(150);
+	
+	public Button(String text, int left, int top, int width, int height) {
+		super();
+
+		this.text = text;
+		this.left = left;
+		this.top = top;
+		this.width = width;
+		this.height = height;
+
+		c_bgEnabled = 200;
+		c_textDisabled = 150;
+	}
+
+	@Override
+	public void display() {
+		int borderWeight = focused ? 2 : 1;
+
+		//draw rectangle
+		stroke(focused ? c_borderFocused : c_borderUnfocused); //rectangle border
+		strokeWeight(borderWeight);
+ 		fill(enabled ? (pressed ? c_bgPressed : c_bgEnabled) : c_bgDisabled); //rectangle color
+		rect(left, top, width, height);
+
+		//draw the text on our own
+		textSize(textSize);
+		fill(enabled ? c_textEnabled : c_textDisabled);
+		drawTextCentered(text, textSize, left, top, width, height);
+	}
+
+	@Override
+	public void mousePressed() {
+		super.mousePressed();
+		if (mouseIsOver()) {
+			pressed = true;
+		}
+	}
+
+	@Override
+	public void mouseReleased() {
+		super.mouseReleased();
+		//we only register a mouse click if the mouse was on the button while pressing and releasing
+		if (mouseIsOver() && pressed) mouseClicked();
+
+		if (pressed) pressed = false;
+	}
+
+	private void mouseClicked() {
+		println("clicked");
 	}
 };
 
@@ -211,3 +261,10 @@ public class Stopwatch {
 		return running ? System.currentTimeMillis() - start : 0;
 	}
 };
+
+//draws text centered in the given box
+public void drawTextCentered(String str, int size, int l, int t, int w, int h) {
+	textSize(size);
+	textAlign(CENTER, TOP);
+	text(str, l + (w / 2), t - textHeight()/2 + h/2);
+}
